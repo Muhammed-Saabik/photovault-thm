@@ -1,8 +1,9 @@
-
+version: "3.9"
 
 services:
   db:
     image: mysql:5.7
+    container_name: photovault-db
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: photovault
@@ -13,9 +14,21 @@ services:
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - pvnet
+    restart: always
+
+  internal:
+    build: ./internal
+    container_name: photovault-internal
+    networks:
+      - pvnet
+    restart: always
+    # internal service is intentionally *not* exposed to host
+    expose:
+      - "8080"
 
   web:
     build: ./web
+    container_name: photovault-web
     depends_on:
       - db
       - internal
@@ -28,17 +41,10 @@ services:
       - "5000:5000"
     networks:
       - pvnet
-
-  internal:
-    build: ./internal
-    networks:
-      - pvnet
-    # intentionally do NOT publish internal port to host; it should only be reachable from other containers
-    # ports:
-    #   - "8080:8080"
+    restart: always
 
 volumes:
-  db_data: {}
+  db_data:
 
 networks:
   pvnet:
