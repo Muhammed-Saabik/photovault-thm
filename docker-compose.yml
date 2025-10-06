@@ -1,0 +1,44 @@
+
+
+services:
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: photovault
+      MYSQL_USER: pvuser
+      MYSQL_PASSWORD: pvpass
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - pvnet
+
+  web:
+    build: ./web
+    depends_on:
+      - db
+      - internal
+    environment:
+      DATABASE_HOST: db
+      DATABASE_USER: pvuser
+      DATABASE_PASSWORD: pvpass
+      DATABASE_NAME: photovault
+    ports:
+      - "5000:5000"
+    networks:
+      - pvnet
+
+  internal:
+    build: ./internal
+    networks:
+      - pvnet
+    # intentionally do NOT publish internal port to host; it should only be reachable from other containers
+    # ports:
+    #   - "8080:8080"
+
+volumes:
+  db_data: {}
+
+networks:
+  pvnet:
